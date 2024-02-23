@@ -1,0 +1,51 @@
+***(
+
+Example 1 in the paper
+Model M2
+
+***)
+
+load ../game . 
+
+smod MODEL is
+    pr GAME-STRAT .
+    ops a b c  : -> Agent .
+    op p       : -> Prop .
+
+    var AG : Agent .
+    var i  : Nominal .
+    var AT : Atom .
+
+    --- Configuring the model 
+    eq agents = a, b, c .
+    eq val(AG, p) = AG == b . --- p holds only in agent b
+
+    eq den(0) = a .
+    eq den(1) = b .
+    eq den(2) = c .
+
+
+    op {R+:{_} , R-:{_}} : SetRelation SetRelation -> Model [ctor] .
+    op model : -> Model . 
+    eq model = { R+{ (a, b), (a,c), reflex(agents) } , R-{ (b, c) }} . --- Model M2
+
+
+    --- Local balance property 
+    op lb : Atom -> Formula . 
+    eq lb(AT) =  ((((<+> (<+> AT)) \/ (<-> (<-> AT))) -> (<+> AT)) /\ 
+                  (((<+> (<-> AT)) \/ (<-> (<+> AT))) -> (<-> AT))) .
+
+    op init : -> Tree .
+    eq init = <  model : (P @ a :  lb(p)) > .
+endsm
+
+eof
+
+--- I do not have a winning strategy 
+srew [1] init using make-me-win .
+
+--- We can explore the whole tree
+srew [1] init using expand-tree .
+
+--- I have a winning strategy for the negation 
+srew [1] < model : ( P @ a : ~ lb(p)) >  using make-me-win .

@@ -1,0 +1,41 @@
+***(
+
+File: game.maude
+
+Definition of a Maude's strategy to efficiently explore the search tree
+
+***)
+
+load ./semantics .
+
+smod GAME-STRAT is
+    protecting GAME-SEMANTICS .
+
+    strat expand-tree : @ Tree .
+    strat make-me-win : @ Tree .
+    strat det-str : @ Tree .
+
+    --- This is completely deterministic since all the 
+    --- branches are explored 
+    sd expand-tree :=
+    ( one ( ATOM | TREE-ALL | NEG | Y | I)) ! .
+
+
+    --- This is also deterministic 
+    sd det-str := 
+    ( one (
+            ATOM |   --- Mark all the leaves if any  
+            NEG  |   --- This is deterministic 
+            TREE |   --- Determine winning states if any 
+            Y        --- All your choices need to be explored 
+     ) ) ! .
+
+    --- Stop when a solution has been found 
+    sd make-me-win :=
+    det-str ; 
+    ( match YT:YTree ? fail : --- You win the root and fail
+      match IT:ITree ? idle : --- I win the root and stop 
+      (I ; make-me-win)       --- otherwise, make an I-move and continue
+    ) .
+
+endsm

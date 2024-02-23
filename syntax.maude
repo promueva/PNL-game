@@ -1,0 +1,121 @@
+***(
+
+File: syntax.maude
+
+This file defines the needed sorts and constructors for defining:
+- The two players, P and O
+- Nominals, agents and propositional formulas 
+- Positive and negative relations 
+- PNL models 
+- The syntax for PNL formulas 
+- Game states 
+
+The user module with the Model needs to populate the sorts Prop and Agent. Moreover, 
+equations must be added to define the following elements of the PNL model: 
+
+    op val : Agent Prop -> Bool . --- Valuation function
+    op den : Nominal -> Agent .   --- Denotation function
+    op agents : -> SetAgent .     --- Set of agents
+
+***)
+
+--- Proponent and opponent 
+fmod PLAYER is
+    sort Player .
+    ops P O : -> Player [ctor] .
+endfm
+
+--- To be extended by the user with appropriate constructors for atomic
+--- propositions, nominals and agents. 
+
+fmod SORTS-MODEL is
+    pr NAT .
+    sort Prop . --- Atomic propositions 
+    sort Nominal .
+    subsort Nat < Nominal .
+    sort Agent .
+endfm
+
+--- Positive and negative relation
+fmod RELATION is
+    pr SORTS-MODEL .
+    sort Relation .
+    op `(_,_`) : Agent Agent -> Relation [ctor comm] .
+endfm
+
+
+--- To define sets of relations and agents 
+view Relation from TRIV to RELATION is
+  sort Elt to Relation .
+endv
+view Agent from TRIV to SORTS-MODEL is
+  sort Elt to Agent .
+endv
+
+--- PNL Models
+fmod PNL-MODEL is
+    protecting SET{Relation} * (sort NeSet{Relation} to NeSetRelation, sort Set{Relation} to SetRelation) .
+    protecting SET{Agent} * (sort NeSet{Agent} to NeSetAgent, sort Set{Agent} to SetAgent) .
+    op val : Agent Prop -> Bool . --- To be defined by the user 
+    op den : Nominal -> Agent . --- To be defined by the user 
+    op agents : -> SetAgent . --- To be defined by the user 
+
+    sort Model . --- Just the part of the model that can be updated by connectives 
+    op { R+{_} , R-{_}} : SetRelation SetRelation  -> Model [ctor] .
+endfm
+
+--- Syntax of the logic 
+fmod PNL-SYNTAX is
+    pr SORTS-MODEL .
+    sorts Atom Formula .
+    subsort Prop Nominal < Atom < Formula .
+
+    ops R+ R- : Nominal Nominal     -> Atom [ctor] .
+    op ~_ : Formula                 -> Formula [ctor prec 20] .
+    ops _/\_ _\/_ : Formula Formula -> Formula [ctor  gather(e E) prec 30 ] .
+    ops <+>_ <->_  : Formula        -> Formula [ctor prec 25] . --- Diamond 
+    ops `(+`)_ `(-`)_ : Formula     -> Formula [ctor prec 25] . --- Changing a link
+    op [A]_ : Formula               -> Formula [ctor prec 25] .
+    ops ++_ --_ : Formula           -> Formula [ctor prec 20] . --- Adding a new item in the relation
+    ops +-_     : Formula           -> Formula [ctor prec 20] . --- Adding a positive or negative relation 
+
+    --- Derived constructors
+    vars F G : Formula .
+    op _->_ : Formula Formula -> Formula [prec 35].
+    ops `[+`]_ `[-`]_ : Formula -> Formula [ctor prec 25] .
+    eq F -> G = (~ F) \/ G .
+    eq [+] F = ~ (<+> (~ F)) .
+    eq [-] F = ~ (<-> (~ F)) .
+endfm
+
+--- States of the game 
+fmod GAME-STATE is
+    pr PNL-SYNTAX .
+    protecting PNL-MODEL .
+    pr PLAYER .
+
+    sorts State AtState  . --- State and atomic/elementary state
+    subsort AtState < State .
+    op _@_:_ : Player Agent Atom -> AtState [ctor] .
+    op _@_:_ : Player Agent Formula -> State [ctor] .
+
+    sort Scheduler .
+    ops Y I : STree -> Scheduler [ctor] .
+
+    --- Game Tree
+    sorts Tree ITree YTree ?Tree DTree .
+    --- DTrees : Trees with one decision 
+    subsort ITree YTree < DTree < Tree .
+    subsort ?Tree < Tree .
+    op <_:_> : Model State  -> ?Tree . --- Not yet explored tree
+    op <_:_:_> : Model State Scheduler -> ?Tree .    --- A sequent has been taken to continue
+    op I<_:_:_> : Model State Scheduler -> ITree  .  --- I win tree
+    op Y<_:_:_> : Model State Scheduler -> YTree  .  --- You win tree
+
+    --- Set of trees. 
+    sort STree .
+    subsort Tree < STree .
+    op nil : -> STree [ctor] .
+    op _;_ : STree STree -> STree [ctor comm assoc id: nil] .
+endfm
+
