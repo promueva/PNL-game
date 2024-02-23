@@ -1,0 +1,48 @@
+***(
+
+Example 2 in the paper
+This model is not fully connected and then, the formula ([+]p -> [A]p) \/ ([-]p -> [A] p)
+can be falsified in this model 
+
+***)
+
+load ../game . 
+
+smod MODEL is
+    pr GAME-STRAT .
+    ops a b c d e  : -> Agent .
+    op p       : -> Prop .
+
+    var AG : Agent .
+    var i  : Nominal .
+    var AT : Atom .
+
+    --- Configuring the model 
+    eq agents = a, b, c, d, e .
+    eq val(AG, p) = AG == a or AG == b or AG == c . --- p holds only in agent b
+
+    eq den(0) = a .
+    eq den(1) = b .
+    eq den(2) = c .
+    eq den(3) = d .
+    eq den(4) = e .
+
+
+    op {R+:{_} , R-:{_}} : SetRelation SetRelation -> Model [ctor] .
+    op model : -> Model . 
+    eq model = { R+{ (a, b), reflex(agents) } , R-{ (a, c)} } .
+
+    --- Collective connectedness 
+    op cc :  -> Formula . 
+    eq cc =  ( ([+] p) -> ([A] p)) \/  ( ([-] p) -> ([A] p)) .
+
+    op init : -> Tree .
+    eq init = <  model : (P @ a : cc ) > .
+endsm
+
+
+eof
+
+--- I do not have a winning strategy (both [+] p and [-] p are true but [A] is not 
+srew [1] init using make-me-win .
+
