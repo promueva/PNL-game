@@ -146,7 +146,7 @@ mod GAME-SEMANTICS is
                       else  < { R+{ RELS+ } , R-{ RELS- }} : O @ a : (-) F : 
                       Y(next-to-(a, O, RELS+, RELS-, SETAG, F))  >
                   fi 
-    if SETAG := succ(a, RELS-) \ (a) .
+    if SETAG := succ(a, RELS+) \ (a) .
 
     crl [I] : < { R+{ RELS+ } , R-{ RELS- }} : P @ a : (+) F > =>
                   if | SETAG | == 0 
@@ -162,7 +162,7 @@ mod GAME-SEMANTICS is
                       else  < { R+{ RELS+ } , R-{ RELS- }} : P @ a : (-) F : 
                       I(next-to-(a, P, RELS+, RELS-, SETAG, F))  >
                   fi 
-    if SETAG := succ(a, RELS-) \ (a) .
+    if SETAG := succ(a, RELS+) \ (a) .
 
 
      op global : Player SetRelation SetRelation Formula -> STree .
