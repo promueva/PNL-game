@@ -24,8 +24,6 @@ smod MODEL is
     eq den(1) = b .
     eq den(2) = c .
 
-
-    op {R+:{_} , R-:{_}} : SetRelation SetRelation -> Model [ctor] .
     op model : -> Model . 
     eq model = { R+{ (a, b), (a,c), reflex(agents) } , R-{ (b, c) }} . --- Model M2
 

@@ -20,8 +20,10 @@ mod GAME-SEMANTICS is
     vars F G          : Formula .
     vars RELS+ RELS-  : SetRelation .
     vars RELS         : SetRelation .
+    var  R            : Relation .
     vars AG  AG' AG'' : Agent .
     var SETAG         : SetAgent .
+    var SETAG'        : SetAgent .
     var MODEL         : Model .
     var ATOM          : Atom .
     var YTREE         : YTree .
@@ -164,6 +166,76 @@ mod GAME-SEMANTICS is
                   fi 
     if SETAG := succ(a, RELS+) \ (a) .
 
+    --- It is always possible to add new positive relations but 
+    --- here we restrict to "new" links
+    crl [Y] : < { R+{ RELS+ } , R-{ RELS- }} : O @ a : ++ F > =>
+                  if | RELS | == 0 
+                      then I< { R+{ RELS+ } , R-{ RELS- }} : O @ a : ++ F : Y(nil) >
+                      else  < { R+{ RELS+ } , R-{ RELS- }} : O @ a : ++ F : 
+                      Y(next-new-rel+(O, a,  RELS+, RELS-, RELS, F))  >
+                  fi 
+    if RELS := all-relations \ (RELS-, RELS+) .
+
+    --- It is always possible to add new positive relations but 
+    --- here we restrict to "new" links
+    crl [Y] : < { R+{ RELS+ } , R-{ RELS- }} : O @ a : -- F > =>
+                  if | RELS | == 0 
+                      then I< { R+{ RELS+ } , R-{ RELS- }} : O @ a : -- F : Y(nil) >
+                      else  < { R+{ RELS+ } , R-{ RELS- }} : O @ a : -- F : 
+                      Y(next-new-rel-(O, a,  RELS+, RELS-, RELS, F))  >
+                  fi 
+    if RELS := all-relations \ (RELS-, RELS+) .
+
+    --- It is always possible to add new positive relations but 
+    --- here we restrict to "new" links
+    crl [Y] : < { R+{ RELS+ } , R-{ RELS- }} : O @ a : +- F > =>
+                  if | RELS | == 0 
+                      then I< { R+{ RELS+ } , R-{ RELS- }} : O @ a : +- F : Y(nil) >
+                      else  < { R+{ RELS+ } , R-{ RELS- }} : O @ a : +- F : 
+                      Y( (next-new-rel+(O, a,  RELS+, RELS-, RELS, F); next-new-rel-(O, a,  RELS+, RELS-, RELS, F)))  >
+                  fi 
+    if RELS := all-relations \ (RELS-, RELS+) .
+
+    --- It is always possible to add new positive relations but 
+    --- here we restrict to "new" links
+    crl [I] : < { R+{ RELS+ } , R-{ RELS- }} : P @ a : ++ F > =>
+                  if | RELS | == 0 
+                      then Y< { R+{ RELS+ } , R-{ RELS- }} : P @ a : ++ F : I(nil) >
+                      else  < { R+{ RELS+ } , R-{ RELS- }} : P @ a : ++ F : 
+                      I(next-new-rel+(P, a,  RELS+, RELS-, RELS, F))  >
+                  fi 
+    if RELS := all-relations \ (RELS-, RELS+) .
+
+    --- It is always possible to add new positive relations but 
+    --- here we restrict to "new" links
+    crl [I] : < { R+{ RELS+ } , R-{ RELS- }} : P @ a : -- F > =>
+                  if | RELS | == 0 
+                      then Y< { R+{ RELS+ } , R-{ RELS- }} : P @ a : -- F : I(nil) >
+                      else  < { R+{ RELS+ } , R-{ RELS- }} : P @ a : -- F : 
+                      I(next-new-rel-(P, a,  RELS+, RELS-, RELS, F))  >
+                  fi 
+    if RELS := all-relations \ (RELS-, RELS+) .
+
+    --- It is always possible to add new positive relations but 
+    --- here we restrict to "new" links
+    crl [I] : < { R+{ RELS+ } , R-{ RELS- }} : P @ a : +- F > =>
+                  if | RELS | == 0 
+                      then Y< { R+{ RELS+ } , R-{ RELS- }} : P @ a : +- F : I(nil) >
+                      else  < { R+{ RELS+ } , R-{ RELS- }} : P @ a : +- F : 
+                      I( (next-new-rel+(P, a,  RELS+, RELS-, RELS, F); next-new-rel-(P, a,  RELS+, RELS-, RELS, F)))  >
+                  fi 
+    if RELS := all-relations \ (RELS-, RELS+) .
+
+     --- The set of all possible relations
+     op all-relations : -> SetRelation [memo]  .
+     op all-relations : SetAgent SetAgent -> SetRelation .
+     op $all-relations : Agent SetAgent -> SetRelation .
+     eq all-relations = all-relations(agents, agents) .
+     eq all-relations(empty, SETAG') = empty .
+     eq all-relations((AG, SETAG), SETAG') = $all-relations(AG, SETAG'), all-relations(SETAG, SETAG') .
+     eq $all-relations(AG, empty) = empty .
+     eq $all-relations(AG, (AG', SETAG')) = (AG, AG'), $all-relations(AG, SETAG') .
+
 
      op global : Player SetRelation SetRelation Formula -> STree .
      op global : SetAgent Player SetRelation SetRelation Formula -> STree .
@@ -235,6 +307,20 @@ mod GAME-SEMANTICS is
     eq next-to-(AG, PLAYER, RELS+, RELS-, (AG', SETAG), F) = 
      < { R+{ RELS+ \ ( AG, AG' ) }, R-{ RELS- , ( (AG, AG') ) }} : PLAYER @ AG : F > ; 
      next-to-(AG, PLAYER, RELS+, RELS-, SETAG, F) .
+
+    --- Successor states for ++ formulas
+    op next-new-rel+ :  Player Agent SetRelation SetRelation SetRelation Formula -> STree .
+    eq next-new-rel+(PLAYER, a, RELS+, RELS-, empty, F) = nil .
+    eq next-new-rel+(PLAYER, a, RELS+, RELS-, ((AG, AG'), RELS), F) = 
+     < { R+{ RELS+ , ( AG, AG' ) }, R-{ RELS-  }} : PLAYER @ a : F > ; 
+     next-new-rel+(PLAYER, a, RELS+, RELS-, RELS, F) .
+
+    --- Successor states for -- formulas
+    op next-new-rel- :  Player Agent SetRelation SetRelation SetRelation Formula -> STree .
+    eq next-new-rel-(PLAYER, a, RELS+, RELS-, empty, F) = nil .
+    eq next-new-rel-(PLAYER, a, RELS+, RELS-, ((AG, AG'), RELS), F) = 
+     < { R+{ RELS+  }, R-{ RELS- , (AG, AG')  }} : PLAYER @ a : F > ; 
+     next-new-rel-(PLAYER, a, RELS+, RELS-, RELS, F) .
 
 
     --- Successor worlds given a relation

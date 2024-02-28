@@ -10,7 +10,7 @@ load ../game .
 
 smod MODEL is
     pr GAME-STRAT .
-    ops a b c d e  : -> Agent .
+    ops a b c d  : -> Agent .
     op p       : -> Prop .
 
     var AG : Agent .
@@ -18,29 +18,35 @@ smod MODEL is
     var AT : Atom .
 
     --- Configuring the model 
-    eq agents = a, b, c, d, e .
-    eq val(AG, p) = AG == a or AG == b or AG == c . --- p holds only in agent b
+    eq agents = a, b, c, d .
+    eq val(AG, p) = AG == a . 
 
     eq den(0) = a .
     eq den(1) = b .
     eq den(2) = c .
     eq den(3) = d .
-    eq den(4) = e .
+
 
     op model : -> Model . 
-    eq model = { R+{ (a, b), reflex(agents) } , R-{ (a, c)} } .
+    eq model = { R+{ (b, d), reflex(agents) } , R-{ (a ,b ) , (a, c)} } .
 
     --- Collective connectedness 
     op cc :  -> Formula . 
     eq cc =  ( ([+] p) -> ([A] p)) \/  ( ([-] p) -> ([A] p)) .
 
+    --- Local balance property 
+    op lb : Atom -> Formula . 
+    eq lb(AT) =  ((((<+> (<+> AT)) \/ (<-> (<-> AT))) -> (<+> AT)) /\ 
+                  (((<+> (<-> AT)) \/ (<-> (<+> AT))) -> (<-> AT))) .
+
+    --- After adding some links, it is balanced and fully connected 
     op init : -> Tree .
-    eq init = <  model : (P @ a : cc ) > .
+    eq init = <  model : (P @ a : +- +- +- (cc /\ lb(p)) ) > .
 endsm
 
 
 eof
 
---- I do not have a winning strategy (both [+] p and [-] p are true but [A] is not 
-srew [1] init using make-me-win .
+--- I do have a winning strategy (adding a +(b,c), +(d,c), -(a,d))
+srew [1] init using expand-tree .
 
