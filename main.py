@@ -18,7 +18,7 @@ def getSolution(file, modulename="MODEL", initialterm="init", strategy='expand-t
     modsys = maude.getModule(modulename)
     tinit = modsys.parseTerm(initialterm)
 
-    result = tinit.srewrite(modsys.parseStrategy(strategy))
+    result = tinit.srewrite(modsys.parseStrategy(strategy), depth=True)
 
     try:
         return next(result)[0] 

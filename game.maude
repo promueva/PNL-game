@@ -4,6 +4,11 @@ File: game.maude
 
 Definition of a Maude's strategy to efficiently explore the search tree
 
+These strategies are more efficient using dsrew. Note that the rule SELECT
+allows for controlling the non-determinism on selecting the next sequent to be
+selected. It is sufficient to consider "only" one solution since, when it
+fails, the next one will be chosen. 
+
 ***)
 
 load ./semantics .
@@ -27,7 +32,8 @@ smod GAME-STRAT is
             ATOM |   --- Mark all the leaves if any  
             NEG  |   --- This is deterministic 
             TREE |   --- Determine winning states if any 
-            Y        --- All your choices need to be explored 
+            Y    |   --- All your choices need to be explored 
+            I        --- Expand my choices (possibly without selecting one)
      ) ) ! .
 
     --- Stop when a solution has been found 
@@ -35,7 +41,7 @@ smod GAME-STRAT is
     det-str ; 
     ( match YT:YTree ? fail : --- You win the root and fail
       match IT:ITree ? idle : --- I win the root and stop 
-      (I ; make-me-win)       --- otherwise, make an I-move and continue
+      (one(SELECT) ; make-me-win)       --- otherwise, make an I-move and continue
     ) .
 
 endsm

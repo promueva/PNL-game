@@ -46,5 +46,6 @@ endsm
 eof
 
 --- I do have a winning strategy (adding a +(b,c), +(d,c), -(a,d))
-srew [1] init using expand-tree .
+dsrew [1] init using make-me-win .
+dsrew [1] init using expand-tree .
 

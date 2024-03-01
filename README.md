@@ -36,13 +36,13 @@ check the existence of winning strategies. For instance:
 $> maude model-M2.maude
 
 --- I don't have a winning strategy for this game 
-Maude> srew [1] init using make-me-win .
+Maude> dsrew [1] init using make-me-win .
 srewrite [1] in EXAMPLE : init using make-me-win .
 
 No solution.
 
 --- But it is possible to explore the whole search tree
-Maude> srew [1] init using expand-tree .
+Maude> dsrew [1] init using expand-tree .
 srewrite [1] in EXAMPLE : init using expand-tree .
 
 Solution 1
@@ -51,7 +51,7 @@ result YTree: Y< {R+{(a,a), (a,b), (a,c), (b,b), (c,c)},R-{(b,c)}}
 ...
 
 --- And I have a winning strategy for the negation of this formula
-Maude> srew [1] < model : ( P @ a : ~ lb(p)) >  using make-me-win .
+Maude> dsrew [1] < model : ( P @ a : ~ lb(p)) >  using make-me-win .
 srewrite [1] in EXAMPLE : < model : P @ a : ~ lb(p) > using make-me-win .
 
 Solution 1

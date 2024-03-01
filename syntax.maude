@@ -107,8 +107,9 @@ fmod GAME-STATE is
     --- DTrees : Trees with one decision 
     subsort ITree YTree < DTree < Tree .
     subsort ?Tree < Tree .
-    op <_:_> : Model State  -> ?Tree . --- Not yet explored tree
-    op <_:_:_> : Model State Scheduler -> ?Tree .    --- A sequent has been taken to continue
+    op <_:_> : Model State              -> ?Tree . --- Not yet explored tree
+    op <_:_:_> : Model State Scheduler  -> ?Tree .    --- A sequent scheduled to continue
+    op [_:_] : Model State              -> ?Tree .    --- A sequent not yet scheduled/explored
     op I<_:_:_> : Model State Scheduler -> ITree  .  --- I win tree
     op Y<_:_:_> : Model State Scheduler -> YTree  .  --- You win tree
 

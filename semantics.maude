@@ -29,6 +29,8 @@ mod GAME-SEMANTICS is
     var YTREE         : YTree .
     var ITREE         : ITree .
     var ?TREE         : ?Tree .
+    var TREE          : Tree .
+    var DTREE         : DTree .
     vars MB YB        : Nat .
     --- -------------------------------
 
@@ -52,12 +54,12 @@ mod GAME-SEMANTICS is
     
     rl [Y] : < MODEL :  P @ a : F /\ G > =>
              < MODEL :  P @ a : F /\ G :  
-                        Y(< MODEL :  P @ a : F  > ; < MODEL :  P @ a : G  >) > .
+                        Y(< MODEL :  P @ a : F  > ; [ MODEL :  P @ a : G  ]) > .
 
     
     rl [I] :
-             < MODEL :  O @ a : F /\ G > =>
-             < MODEL :  O @ a : F /\ G :  I(< MODEL :  O @ a : F  > ; < MODEL :  O @ a : G  >) > .
+             < MODEL :  O @ a : F /\ G > => --- The F part is explored first 
+             < MODEL :  O @ a : F /\ G :  I(< MODEL :  O @ a : F  > ; [ MODEL :  O @ a : G  ]) > .
 
     --- -----------
     --- Disjunction
@@ -66,11 +68,11 @@ mod GAME-SEMANTICS is
     rl [Y] : < MODEL :  O @ a : F \/ G > =>
              < MODEL :  O @ a : F \/ G :  
                         Y(< MODEL :  O @ a : F  > ; 
-                          < MODEL :  O @ a : G  >) > .
+                          [ MODEL :  O @ a : G  ]) > .
 
     rl [I] : 
-          < MODEL :  P @ a : F \/ G > =>
-          < MODEL :  P @ a : F \/ G :  I(< MODEL :  P @ a : F  > ; < MODEL :  P @ a : G  >) > .
+          < MODEL :  P @ a : F \/ G > =>  --- The F part is explore first 
+          < MODEL :  P @ a : F \/ G :  I(< MODEL :  P @ a : F  > ; [ MODEL :  P @ a : G  ]) > .
 
     --- -----------
     --- Negation
@@ -226,45 +228,35 @@ mod GAME-SEMANTICS is
                   fi 
     if RELS := all-relations \ (RELS-, RELS+) .
 
-     --- The set of all possible relations
-     op all-relations : -> SetRelation [memo]  .
-     op all-relations : SetAgent SetAgent -> SetRelation .
-     op $all-relations : Agent SetAgent -> SetRelation .
-     eq all-relations = all-relations(agents, agents) .
-     eq all-relations(empty, SETAG') = empty .
-     eq all-relations((AG, SETAG), SETAG') = $all-relations(AG, SETAG'), all-relations(SETAG, SETAG') .
-     eq $all-relations(AG, empty) = empty .
-     eq $all-relations(AG, (AG', SETAG')) = (AG, AG'), $all-relations(AG, SETAG') .
-
-
-     op global : Player SetRelation SetRelation Formula -> STree .
-     op global : SetAgent Player SetRelation SetRelation Formula -> STree .
-     eq global(PLAYER, RELS+, RELS-, F) = global(agents, PLAYER, RELS+ , RELS-, F) .
-     eq global(empty, PLAYER, RELS+, RELS-, F) = nil .
-     eq global((AG, SETAG), PLAYER, RELS+, RELS-, F) = < { R+{ RELS+ } , R-{ RELS- }} : PLAYER @ AG : F >  ;
-                                                       global(SETAG, PLAYER, RELS+, RELS-,  F) .
-
 
     --- Rules controlling the shape of the tree
 
     --- If you win one, then you won that state 
     rl [TREE]  : < MODEL : PLAYER @ AG : F : Y( YTREE   ; STREE) > =>
-                    Y< MODEL : PLAYER @ AG : F : Y( YTREE ) > .
+                Y< MODEL : PLAYER @ AG : F : Y( YTREE ) > .
 
     --- If I win one, then I won that state 
     rl [TREE]  : < MODEL : PLAYER @ AG : F : I( ITREE   ; STREE) > =>
-                    I< MODEL : PLAYER @ AG : F : I( ITREE ) > .
-
+                I< MODEL : PLAYER @ AG : F : I( ITREE ) > .
 
     --- If all of YOUR choices are ITrees, then I win
     crl [TREE]  : < MODEL : PLAYER @ AG : F : Y(STREE) > =>
-                     I< MODEL : PLAYER @ AG : F : Y(STREE) > 
+                 I< MODEL : PLAYER @ AG : F : Y(STREE) > 
         if all-ITrees(STREE) .
 
-    --- If all of MY choices are YTrees, then Y win
-    crl [TREE]  : < MODEL : PLAYER @ AG : F :  I(STREE) > =>
-                     Y< MODEL : PLAYER @ AG : F : I(STREE) > 
+    --- If all of MY choices are YTrees, then You win
+    crl [TREE]  : < MODEL : PLAYER @ AG : F : I(STREE) > =>
+                 Y< MODEL : PLAYER @ AG : F : I(STREE) > 
         if all-YTrees(STREE) .
+
+    --- If none of the sequents is selected, then select one of them 
+    crl [SELECT]  :  Y( [ MODEL : PLAYER @ AG : F ] ; STREE)  =>
+                     Y( < MODEL : PLAYER @ AG : F > ; STREE ) 
+       if all-?Trees(STREE) .
+    crl [SELECT]  :  I( [ MODEL : PLAYER @ AG : F ] ; STREE)  =>
+                     I( < MODEL : PLAYER @ AG : F > ; STREE )  
+       if all-?Trees(STREE) .
+
 
     --- These set of rules are as the previous ones but no decision is discarded
     --- This is useful to explore all the search tree
@@ -282,45 +274,76 @@ mod GAME-SEMANTICS is
         if all-ITrees(STREE) .
 
     --- If all of MY choices are YTrees, then Y win
-    crl [TREE-ALL]  : < MODEL : PLAYER @ AG : F :  I(STREE) > =>
+    crl [TREE-ALL]  : < MODEL : PLAYER @ AG : F : I(STREE) > =>
                      Y< MODEL : PLAYER @ AG : F : I(STREE) > 
         if all-YTrees(STREE) .
 
+    --- When expanding the whole tree, the [..] sequents become < ... > selected 
+    rl [TREE-ALL] : 
+       [ MODEL : PLAYER @ AG : F ] => 
+       < MODEL : PLAYER @ AG : F > .
+
+     --- ---------------------
+     --- Auxiliary definitions
+     --- ---------------------
+
+     --- The set of all possible relations
+     op all-relations : -> SetRelation [memo]  .
+     op all-relations : SetAgent SetAgent -> SetRelation .
+     op $all-relations : Agent SetAgent -> SetRelation .
+     eq all-relations = all-relations(agents, agents) .
+     eq all-relations(empty, SETAG') = empty .
+     eq all-relations((AG, SETAG), SETAG') = $all-relations(AG, SETAG'), all-relations(SETAG, SETAG') .
+     eq $all-relations(AG, empty) = empty .
+     eq $all-relations(AG, (AG', SETAG')) = (AG, AG'), $all-relations(AG, SETAG') .
+
+
+     --- In all the functions below, the sequents are not selected [..]
+     --- For the [A] operator
+     op global : Player SetRelation SetRelation Formula -> STree .
+     op global : SetAgent Player SetRelation SetRelation Formula -> STree .
+     eq global(PLAYER, RELS+, RELS-, F) = global(agents, PLAYER, RELS+ , RELS-, F) .
+     eq global(empty, PLAYER, RELS+, RELS-, F) = nil .
+     eq global((AG, SETAG), PLAYER, RELS+, RELS-, F) = 
+          [ { R+{ RELS+ } , R-{ RELS- }} : PLAYER @ AG : F ]  ;
+          global(SETAG, PLAYER, RELS+, RELS-,  F) .
 
 
     --- Successor states for diamond formulas
+    --- This function is never called with empty in its 4th argument 
     op next : Player SetRelation SetRelation SetAgent Formula -> STree .
-    eq next(PLAYER, RELS+, RELS-, empty, F) = nil .
-    eq next(PLAYER, RELS+, RELS-, (AG, SETAG), F) = < { R+{ RELS+ }, R-{ RELS- }} : PLAYER @ AG : F > ; 
-       next(PLAYER, RELS+, RELS-, SETAG, F) .
+    eq next(PLAYER, RELS+, RELS-, empty, F) = nil . --- Never used! 
+    eq next(PLAYER, RELS+, RELS-, (AG, SETAG), F) = 
+          [ { R+{ RELS+ }, R-{ RELS- }} : PLAYER @ AG : F ] ;
+          next(PLAYER, RELS+, RELS-, SETAG, F) .
 
     --- Successor states for (+) formulas
     op next-to+ : Agent Player SetRelation SetRelation SetAgent Formula -> STree .
     eq next-to+(AG, PLAYER, RELS+, RELS-, empty, F) = nil .
     eq next-to+(AG, PLAYER, RELS+, RELS-, (AG', SETAG), F) = 
-     < { R+{ RELS+ , ( AG, AG' ) }, R-{ RELS- \ ( (AG, AG') ) }} : PLAYER @ AG : F > ; 
-     next-to+(AG, PLAYER, RELS+, RELS-, SETAG, F) .
+       [ { R+{ RELS+ , ( AG, AG' ) }, R-{ RELS- \ ( (AG, AG') ) }} : PLAYER @ AG : F ] ;
+       next-to+(AG, PLAYER, RELS+, RELS-, SETAG, F) .
 
     --- Successor states for (-) formulas
     op next-to- : Agent Player SetRelation SetRelation SetAgent Formula -> STree .
     eq next-to-(AG, PLAYER, RELS+, RELS-, empty, F) = nil .
     eq next-to-(AG, PLAYER, RELS+, RELS-, (AG', SETAG), F) = 
-     < { R+{ RELS+ \ ( AG, AG' ) }, R-{ RELS- , ( (AG, AG') ) }} : PLAYER @ AG : F > ; 
-     next-to-(AG, PLAYER, RELS+, RELS-, SETAG, F) .
+       [ { R+{ RELS+ \ ( AG, AG' ) }, R-{ RELS- , ( (AG, AG') ) }} : PLAYER @ AG : F ]  ;
+       next-to-(AG, PLAYER, RELS+, RELS-, SETAG, F) .
 
     --- Successor states for ++ formulas
     op next-new-rel+ :  Player Agent SetRelation SetRelation SetRelation Formula -> STree .
     eq next-new-rel+(PLAYER, a, RELS+, RELS-, empty, F) = nil .
     eq next-new-rel+(PLAYER, a, RELS+, RELS-, ((AG, AG'), RELS), F) = 
-     < { R+{ RELS+ , ( AG, AG' ) }, R-{ RELS-  }} : PLAYER @ a : F > ; 
-     next-new-rel+(PLAYER, a, RELS+, RELS-, RELS, F) .
+       [ { R+{ RELS+ , ( AG, AG' ) }, R-{ RELS-  }} : PLAYER @ a : F ] ;
+       next-new-rel+(PLAYER, a, RELS+, RELS-, RELS, F) .
 
     --- Successor states for -- formulas
     op next-new-rel- :  Player Agent SetRelation SetRelation SetRelation Formula -> STree .
     eq next-new-rel-(PLAYER, a, RELS+, RELS-, empty, F) = nil .
     eq next-new-rel-(PLAYER, a, RELS+, RELS-, ((AG, AG'), RELS), F) = 
-     < { R+{ RELS+  }, R-{ RELS- , (AG, AG')  }} : PLAYER @ a : F > ; 
-     next-new-rel-(PLAYER, a, RELS+, RELS-, RELS, F) .
+       [ { R+{ RELS+  }, R-{ RELS- , (AG, AG')  }} : PLAYER @ a : F ] ;
+       next-new-rel-(PLAYER, a, RELS+, RELS-, RELS, F) .
 
 
     --- Successor worlds given a relation
@@ -330,6 +353,7 @@ mod GAME-SEMANTICS is
     eq succ(AG, ((AG', AG'') , RELS)) = succ(AG, RELS) [owise] .
 
     --- Checking if all the elements of a non-empty list of trees are Y-trees
+    op all-YTrees : STree -> Bool .
     op all-YTrees : STree -> Bool .
     eq all-YTrees(nil) = false .
     eq all-YTrees((?TREE ; STREE)) = false .
@@ -342,6 +366,14 @@ mod GAME-SEMANTICS is
     eq all-ITrees((?TREE ; STREE)) = false .
     eq all-ITrees((YTREE ; STREE)) = false .
     eq all-ITrees(STREE) = true [owise] .
+
+    --- Checking if all the elements of possibly empty list of trees are either
+    --- decided trees (I<> or Y<>) o ?Trees of the form [..] 
+
+    op all-?Trees : STree -> Bool .
+    eq all-?Trees(nil) = true .
+    eq all-?Trees(< MODEL :  PLAYER @ AG : F  > ; STREE) = false .
+    eq all-?Trees((TREE ; STREE)) = all-?Trees(STREE) [owise] .
 
     --- The reflexive closure 
     op reflex : SetAgent -> SetRelation .

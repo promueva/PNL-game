@@ -40,5 +40,5 @@ endsm
 eof
 
 --- I have a winning strategy 
-srew [1] init using make-me-win .
+dsrew [1] init using make-me-win .
 
